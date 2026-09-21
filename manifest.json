@@ -1,8 +1,8 @@
 {
   "name": "UPI Spend Sorter",
-  "short_name": "Spend Sorter",
+  "short_name": "UPI Spend",
   "description": "Sort your UPI payments into food, travel, clothes and more.",
-  "start_url": "./index.html",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
