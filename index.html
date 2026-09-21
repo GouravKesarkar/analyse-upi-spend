@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>UPI Spend Sorter</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#15202b">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Spend Sorter">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#eef1ee; --card:#ffffff; --ink:#15202b; --muted:#66727c; --line:#dde3df;
+  --btn:#15202b; --btn-ink:#ffffff; --soft:#f5f7f5; --danger:#b3261e;
+  --display:'Bricolage Grotesque','Trebuchet MS',system-ui,sans-serif;
+  --body:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1519; --card:#182129; --ink:#e9eef1; --muted:#93a1ab; --line:#28343d;
+    --btn:#e9eef1; --btn-ink:#0f1519; --soft:#121b21; --danger:#f2b8b5;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1519; --card:#182129; --ink:#e9eef1; --muted:#93a1ab; --line:#28343d;
+  --btn:#e9eef1; --btn-ink:#0f1519; --soft:#121b21; --danger:#f2b8b5;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.45;-webkit-text-size-adjust:100%}
+main{max-width:640px;margin:0 auto;padding:20px 16px 48px}
+h1{font-family:var(--display);font-weight:800;font-size:28px;line-height:1.1;margin:8px 0 6px;letter-spacing:-.02em}
+.sub{color:var(--muted);margin:0 0 20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:16px}
+h2{font-family:var(--display);font-size:17px;font-weight:700;margin:0 0 10px}
+textarea,input,select{font:inherit;color:var(--ink);background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%}
+textarea{min-height:120px;resize:vertical}
+textarea:focus-visible,input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+button{font:inherit;cursor:pointer;border-radius:10px;padding:10px 14px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+button.primary{background:var(--btn);color:var(--btn-ink);border-color:var(--btn);font-weight:600}
+button.link{border:0;background:none;color:var(--muted);padding:10px 4px;text-decoration:underline}
+.hint{color:var(--muted);font-size:13px;margin:8px 0 0}
+.total{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin-bottom:12px}
+.total .num{font-family:var(--display);font-weight:800;font-size:38px;line-height:1;letter-spacing:-.02em}
+.total .lbl{color:var(--muted);font-size:13px;margin-bottom:4px}
+#month{width:auto;padding:8px 10px}
+.ribbon{display:flex;height:16px;border-radius:8px;overflow:hidden;background:var(--line);margin-bottom:14px}
+.ribbon span{display:block;height:100%;min-width:3px}
+.cat{display:grid;grid-template-columns:12px 1fr auto;gap:2px 10px;align-items:center;width:100%;text-align:left;padding:10px 8px;border:0;border-radius:10px;background:none}
+.cat[aria-pressed="true"]{background:var(--soft);outline:1px solid var(--line)}
+.dot{width:12px;height:12px;border-radius:4px}
+.cat .amt{font-weight:600;font-variant-numeric:tabular-nums}
+.cat .pct{grid-column:2/4;color:var(--muted);font-size:12px}
+.bar{grid-column:2/4;height:5px;background:var(--line);border-radius:3px;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:3px}
+.tx{display:grid;grid-template-columns:1fr auto;gap:6px 10px;padding:12px 0 12px 10px;border-top:1px solid var(--line);border-left:4px solid var(--c);margin-left:0}
+.tx:first-of-type{border-top:0}
+.tx .m{font-weight:600;overflow-wrap:anywhere}
+.tx .d{color:var(--muted);font-size:12px}
+.tx .a{font-weight:700;font-variant-numeric:tabular-nums;text-align:right}
+.tx .ctl{grid-column:1/3;display:flex;gap:8px;align-items:center}
+.tx select{padding:6px 8px;font-size:14px;width:auto;flex:1;max-width:200px}
+.tx .del{padding:6px 10px;color:var(--danger);font-size:13px}
+.add{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.add .full{grid-column:1/3}
+.empty{color:var(--muted);text-align:center;padding:24px 8px}
+.filterbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.install{display:flex;gap:12px;align-items:center;justify-content:space-between;background:var(--btn);color:var(--btn-ink);border-radius:14px;padding:12px 14px;margin-bottom:16px}
+.install p{margin:0;font-size:14px}
+.install .ib{display:flex;gap:6px;align-items:center;flex-shrink:0}
+.install button{background:var(--btn-ink);color:var(--btn);border-color:var(--btn-ink);font-weight:600;padding:8px 12px}
+.install button.x{background:none;color:inherit;border:0;padding:8px;font-size:18px;line-height:1}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--btn);color:var(--btn-ink);padding:10px 16px;border-radius:999px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90%;text-align:center}
+#toast.show{opacity:1}
+@media (prefers-reduced-motion: reduce){#toast{transition:none}}
+</style>
+</head>
+<body>
+<main>
+  <h1>Where did my money go?</h1>
+  <p class="sub">Paste your UPI bank SMS or statement lines. They get sorted into categories automatically.</p>
+
+  <div class="install" id="install" hidden>
+    <p id="installMsg">Install this on your phone to open it like an app.</p>
+    <div class="ib"><button id="installBtn">Install</button><button class="x" id="installX" aria-label="Dismiss">✕</button></div>
+  </div>
+
+  <section class="card">
+    <h2>Add payments</h2>
+    <textarea id="paste" placeholder="Paste bank SMS messages here. Leave a blank line between messages."></textarea>
+    <div class="row">
+      <button class="primary" id="sortBtn">Sort my payments</button>
+      <button id="pdfBtn">Upload PDF statement</button>
+      <input type="file" id="pdfFile" accept="application/pdf,.pdf" hidden>
+      <button class="link" id="sampleBtn">Try sample messages</button>
+    </div>
+    <p class="hint" id="parseNote">Paste SMS or upload a Google Pay / bank PDF. The PDF is read on your device and never uploaded. Only money you paid out is counted.</p>
+  </section>
+
+  <section class="card" id="summary" hidden>
+    <div class="total">
+      <div><div class="lbl" id="totalLbl">Total spent</div><div class="num" id="totalNum">₹0</div></div>
+      <select id="month" aria-label="Month"></select>
+    </div>
+    <div class="ribbon" id="ribbon" aria-hidden="true"></div>
+    <div id="cats"></div>
+  </section>
+
+  <section class="card" id="listCard" hidden>
+    <div class="filterbar">
+      <h2 id="listTitle" style="margin:0">All payments</h2>
+      <button class="link" id="clearFilter" hidden>Show all</button>
+    </div>
+    <p class="hint" style="margin:0 0 6px">Change a category and I'll remember it for that merchant next time.</p>
+    <div id="list"></div>
+  </section>
+
+  <section class="card">
+    <h2>Add one by hand</h2>
+    <div class="add">
+      <input id="mAmt" type="number" inputmode="decimal" min="0" step="0.01" placeholder="Amount (₹)">
+      <input id="mName" type="text" placeholder="Paid to">
+      <select id="mCat" class="full" aria-label="Category"></select>
+      <button class="primary full" id="mAdd">Add payment</button>
+    </div>
+  </section>
+
+  <section class="card" id="resetCard" hidden>
+    <button class="link" id="resetBtn" style="padding:0">Clear all my data</button>
+    <p class="hint">Your payments stay in this browser only. Nothing is uploaded.</p>
+  </section>
+</main>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+const CATS = {
+  'Food':          {color:'#e4572e', kw:['swiggy','zomato','eatery','restaurant','resto','cafe','coffee','starbucks','chai','pizza','dominos','domino','mcdonald','kfc','burger','biryani','bakery','kitchen','dhaba','tiffin','sweets','juice','barbeque','haldiram','subway','food','ice ?cream','faasos','eatfit','behrouz','dunzo cafe','tea']},
+  'Groceries':     {color:'#7fae2f', kw:['bigbasket','blinkit','zepto','instamart','dmart','d mart','grocery','grocer','kirana','supermarket','reliance fresh','more retail','milk','dairy','vegetable','fruits','jiomart','licious','freshtohome','nature.?s basket','provision','general store']},
+  'Travel':        {color:'#2b83b5', kw:['uber','olacabs','ola cabs','ola money','rapido','irctc','redbus','abhibus','makemytrip','goibibo','yatra','cleartrip','indigo','air india','akasa','spicejet','vistara','metro','dmrc','bmtc','ksrtc','msrtc','fastag','petrol','fuel','hpcl','bpcl','iocl','indian oil','bharat petroleum','shell','railway','ixigo','easemytrip','airport','taxi','cab','parking','toll','bus','oyo','airbnb','hotel','lodge']},
+  'Clothes':       {color:'#9a58c2', kw:['myntra','ajio','zara','h&m','h ?and ?m','trends','lifestyle','pantaloons','westside','max fashion','fashion','garment','textile','clothing','apparel','boutique','tailor','shoppers stop','uniqlo','levis','allen solly','peter england','fabindia','biba','w for woman','tanishq','jewel','footwear','shoes','bata','nike','adidas','puma','decathlon','readymade','saree','sarees','vastra','cloth']},
+  'Shopping':      {color:'#d99a00', kw:['amazon','flipkart','meesho','nykaa','croma','reliance digital','ikea','pepperfry','urban ?ladder','snapdeal','tatacliq','shopsy','mall','store','mart','bazaar','electronics','stationery','gift']},
+  'Bills':         {color:'#4667a8', kw:['airtel','jio','vodafone','vi ?prepaid','bsnl','recharge','electricity','bescom','msedcl','tneb','tata power','adani','water','broadband','act fibernet','dth','tatasky','tata play','dish tv','gas','indane','piped','postpaid','insurance','lic','emi','loan','rent','school','fees','bharatpe bill','billdesk','cred']},
+  'Entertainment': {color:'#d13f86', kw:['netflix','hotstar','spotify','bookmyshow','pvr','inox','primevideo','prime video','youtube','sonyliv','zee5','gaana','apple','google play','playstation','steam','cinema','movie','gaming','dream11','game']},
+  'Health':        {color:'#199a86', kw:['pharmacy','pharma','apollo','medplus','1mg','pharmeasy','netmeds','hospital','clinic','diagnostic','lab','labs','dental','doctor','dr ','medical','medico','chemist','health','cult','gym','fitness','optical','eye']},
+  'People':        {color:'#7d8794', kw:[]},
+  'Other':         {color:'#a39b8b', kw:[]}
+};
+const ORDER = ['Groceries','Clothes','Travel','Health','Entertainment','Bills','Food','Shopping'];
+const RX = {};
+ORDER.forEach(c => { RX[c] = new RegExp('(?:^|[^a-z])(?:' + CATS[c].kw.join('|') + ')', 'i'); });
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const inr = n => '₹' + Number(n).toLocaleString('en-IN', {maximumFractionDigits: 2});
+
+let txns = [], rules = {}, filterCat = null, filterMonth = 'all';
+
+function load(){
+  try {
+    txns = JSON.parse(localStorage.getItem('upi_txns') || '[]');
+    rules = JSON.parse(localStorage.getItem('upi_rules') || '{}');
+  } catch (e) { txns = []; rules = {}; }
+}
+function save(){
+  try {
+    localStorage.setItem('upi_txns', JSON.stringify(txns));
+    localStorage.setItem('upi_rules', JSON.stringify(rules));
+  } catch (e) {}
+}
+let toastTimer;
+function toast(msg){
+  const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+/* ---------- parsing ---------- */
+const MONTHS = {jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
+function parseDate(t){
+  let d, m, y, x;
+  if ((x = t.match(/\b(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{2,4})\b/))) { d = +x[1]; m = +x[2]; y = +x[3]; }
+  else if ((x = t.match(/\b(\d{1,2})[-\/. ]?([A-Za-z]{3})[a-z]*[-\/. ,]*(\d{2,4})\b/))) { d = +x[1]; m = MONTHS[x[2].toLowerCase()]; y = +x[3]; }
+  else if ((x = t.match(/\b([A-Za-z]{3})[a-z]*\.?\s+(\d{1,2}),?\s+(\d{4})\b/)) && MONTHS[x[1].toLowerCase()]) { m = MONTHS[x[1].toLowerCase()]; d = +x[2]; y = +x[3]; }
+  if (!d || !m || m > 12 || d > 31) return null;
+  if (y < 100) y += 2000;
+  return y + '-' + String(m).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+}
+function parseAmount(t){
+  let x = t.match(/(?:rs\.?|inr|₹)\s*([\d,]+(?:\.\d+)?)/i);
+  if (!x) x = t.match(/(?:debited|paid|sent|spent|debit)\s*(?:by|with|of)?\s*([\d,]+(?:\.\d+)?)/i);
+  if (!x) return null;
+  const n = parseFloat(x[1].replace(/,/g,''));
+  return isFinite(n) && n > 0 ? n : null;
+}
+function tidy(s){
+  return s.toLowerCase().replace(/[_\-.]+/g,' ').replace(/\s+/g,' ').trim().replace(/\b[a-z]/g, c => c.toUpperCase());
+}
+function parseMerchant(t){
+  const h = t.match(/\b([\w.\-]{2,})@[a-z][a-z0-9]*\b/i);
+  if (h) {
+    const handle = h[1];
+    if (/^\+?\d{8,}$/.test(handle)) return {name:'Person ' + handle.slice(0,2) + '••••' + handle.slice(-4), person:true};
+    return {name: tidy(handle.replace(/\d{6,}.*$/, '')) || tidy(handle)};
+  }
+  const rx = /\bto\s+([A-Za-z0-9&'\-. ]{2,40}?)(?=\s+(?:on|via|using|upi|from|for|at|is|dated|txn|utr|rs|inr)\b|\s+ref\w*|\s*₹|\.(?:\s|$)|\s*[,(\n]|\s*$)/gi;
+  let x;
+  while ((x = rx.exec(t))) {
+    const n = x[1].trim();
+    if (/^(a\/c|acct|account|your|vpa|the)\b/i.test(n)) continue;
+    return {name: tidy(n)};
+  }
+  return {name: 'Unknown'};
+}
+const keyOf = n => n.toLowerCase().replace(/[^a-z0-9]/g,'');
+function categorize(name, raw, person){
+  const k = keyOf(name);
+  if (rules[k]) return rules[k];
+  if (person) return 'People';
+  for (const c of ORDER) if (RX[c].test(name)) return c;
+  for (const c of ORDER) if (RX[c].test(raw)) return c;
+  return 'Other';
+}
+function hash(s){ let h = 5381; for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return 'h' + (h >>> 0).toString(36); }
+
+function parseText(text){
+  let chunks = text.split(/\n\s*\n/).map(s => s.trim()).filter(Boolean);
+  if (chunks.length === 1) {
+    const lines = chunks[0].split('\n').map(s => s.trim()).filter(Boolean);
+    if (lines.filter(l => /(?:rs\.?|inr|₹)\s*\d/i.test(l)).length > 1) chunks = lines;
+  }
+  let added = 0, dup = 0, skipped = 0, unknown = 0;
+  const have = new Set(txns.map(t => t.id));
+  for (const raw of chunks) {
+    const isOut = /debit|paid|sent|spent|trf|transferred|payment|purchase/i.test(raw);
+    const isIn = /credit|received|refund|deposit/i.test(raw);
+    const amt = parseAmount(raw);
+    if (!amt || /received\s+from/i.test(raw) || (isIn && !isOut)) { skipped++; continue; }
+    const id = hash(raw.replace(/\s+/g,' '));
+    if (have.has(id)) { dup++; continue; }
+    const mer = parseMerchant(raw);
+    if (mer.name === 'Unknown') unknown++;
+    txns.push({id, name: mer.name, amt, date: parseDate(raw), cat: categorize(mer.name, raw, mer.person)});
+    have.add(id); added++;
+  }
+  return {added, dup, skipped, unknown};
+}
+
+/* ---------- PDF statements ---------- */
+const PDFJS = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
+async function loadPdfJs(){
+  if (window.pdfjsLib) return window.pdfjsLib;
+  await new Promise((res, rej) => {
+    const sc = document.createElement('script');
+    sc.src = PDFJS + 'pdf.min.js'; sc.onload = res; sc.onerror = () => rej(new Error('load'));
+    document.head.appendChild(sc);
+  });
+  try {
+    const w = await (await fetch(PDFJS + 'pdf.worker.min.js')).text();
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc = URL.createObjectURL(new Blob([w], {type:'text/javascript'}));
+  } catch (e) { window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS + 'pdf.worker.min.js'; }
+  return window.pdfjsLib;
+}
+function itemsToLines(items){
+  const rows = [];
+  items.forEach(it => {
+    if (!it.str || !it.str.trim()) return;
+    const x = it.transform[4], y = it.transform[5];
+    let r = rows.find(r => Math.abs(r.y - y) < 3);
+    if (!r) { r = {y, cells: []}; rows.push(r); }
+    r.cells.push({x, s: it.str});
+  });
+  rows.sort((a, b) => b.y - a.y);
+  return rows.map(r => r.cells.sort((a, b) => a.x - b.x).map(c => c.s.trim()).join(' ').replace(/\s+/g, ' ').trim()).filter(Boolean);
+}
+const DATE_START = /^(?:\d{1,2}\s?[A-Za-z]{3,9},?\s?\d{4}|[A-Za-z]{3,9}\.?\s\d{1,2},?\s?\d{4})\b/;
+function linesToBlocks(lines){
+  if (lines.filter(l => DATE_START.test(l)).length < 2) return lines.join('\n');
+  const out = []; let cur = null;
+  for (const l of lines) {
+    if (DATE_START.test(l)) { if (cur) out.push(cur.join('\n')); cur = [l]; }
+    else if (cur) cur.push(l);
+  }
+  if (cur) out.push(cur.join('\n'));
+  return out.join('\n\n');
+}
+async function pdfToText(file){
+  const lib = await loadPdfJs();
+  const task = lib.getDocument({data: await file.arrayBuffer()});
+  task.onPassword = (cb, reason) => {
+    const p = prompt(reason === 2 ? 'Wrong password. Try again:' : 'This PDF is password-protected. Enter the password:');
+    if (p) cb(p); else task.destroy();
+  };
+  const pdf = await task.promise;
+  let lines = [];
+  for (let p = 1; p <= pdf.numPages; p++) {
+    const tc = await (await pdf.getPage(p)).getTextContent();
+    lines = lines.concat(itemsToLines(tc.items));
+  }
+  return linesToBlocks(lines);
+}
+
+/* ---------- rendering ---------- */
+function monthLabel(m){ return new Date(m + '-01T00:00:00').toLocaleDateString('en-IN', {month:'short', year:'numeric'}); }
+function dayLabel(d){ return new Date(d + 'T00:00:00').toLocaleDateString('en-IN', {day:'numeric', month:'short'}); }
+
+function render(){
+  const has = txns.length > 0;
+  $('#summary').hidden = !has; $('#listCard').hidden = !has; $('#resetCard').hidden = !has;
+  if (!has) return;
+
+  const months = [...new Set(txns.map(t => t.date ? t.date.slice(0,7) : null).filter(Boolean))].sort().reverse();
+  if (filterMonth !== 'all' && !months.includes(filterMonth)) filterMonth = 'all';
+  const ms = $('#month');
+  ms.innerHTML = '<option value="all">All time</option>' + months.map(m => `<option value="${m}">${monthLabel(m)}</option>`).join('');
+  ms.value = filterMonth;
+  ms.hidden = months.length === 0;
+
+  const base = txns.filter(t => filterMonth === 'all' || (t.date && t.date.startsWith(filterMonth)));
+  const total = base.reduce((s,t) => s + t.amt, 0);
+  const by = {};
+  base.forEach(t => by[t.cat] = (by[t.cat] || 0) + t.amt);
+  const sorted = Object.keys(by).sort((a,b) => by[b] - by[a]);
+
+  $('#totalNum').textContent = inr(total);
+  $('#totalLbl').textContent = filterMonth === 'all' ? 'Total spent' : 'Spent in ' + monthLabel(filterMonth);
+  $('#ribbon').innerHTML = sorted.map(c => `<span style="width:${(by[c]/total*100).toFixed(2)}%;background:${CATS[c].color}"></span>`).join('');
+  $('#cats').innerHTML = sorted.length ? sorted.map(c => {
+    const p = total ? (by[c]/total*100) : 0;
+    return `<button class="cat" data-cat="${esc(c)}" aria-pressed="${filterCat === c}">
+      <span class="dot" style="background:${CATS[c].color}"></span><span>${esc(c)}</span><span class="amt">${inr(by[c])}</span>
+      <span class="bar"><i style="width:${p.toFixed(1)}%;background:${CATS[c].color}"></i></span>
+      <span class="pct">${p.toFixed(0)}% of spending</span></button>`;
+  }).join('') : '<div class="empty">No payments in this month.</div>';
+
+  let list = base.slice();
+  if (filterCat) list = list.filter(t => t.cat === filterCat);
+  list.sort((a,b) => (b.date || '').localeCompare(a.date || ''));
+  $('#listTitle').textContent = filterCat ? filterCat : 'All payments';
+  $('#clearFilter').hidden = !filterCat;
+  const opts = c => Object.keys(CATS).map(k => `<option${k === c ? ' selected' : ''}>${k}</option>`).join('');
+  $('#list').innerHTML = list.map(t => `
+    <div class="tx" style="--c:${CATS[t.cat].color}">
+      <div><div class="m">${esc(t.name)}</div><div class="d">${t.date ? dayLabel(t.date) : 'No date found'}</div></div>
+      <div class="a">${inr(t.amt)}</div>
+      <div class="ctl"><select data-id="${t.id}" aria-label="Category for ${esc(t.name)}">${opts(t.cat)}</select>
+      <button class="del" data-del="${t.id}" aria-label="Delete payment to ${esc(t.name)}">Delete</button></div>
+    </div>`).join('') || '<div class="empty">Nothing here.</div>';
+}
+
+/* ---------- events ---------- */
+$('#sortBtn').onclick = () => {
+  const text = $('#paste').value.trim();
+  if (!text) { toast('Paste some messages first'); return; }
+  const r = parseText(text);
+  save(); render();
+  const bits = [];
+  if (r.added) bits.push(r.added + ' payment' + (r.added > 1 ? 's' : '') + ' added');
+  if (r.dup) bits.push(r.dup + ' already added');
+  if (r.skipped) bits.push(r.skipped + ' skipped (no amount or money received)');
+  if (r.unknown) bits.push(r.unknown + ' with no merchant found');
+  $('#parseNote').textContent = bits.length ? bits.join('. ') + '.' : 'Nothing could be read. Check that each message includes an amount like Rs.250.';
+  if (r.added) { $('#paste').value = ''; toast(r.added + ' added and sorted'); }
+};
+$('#sampleBtn').onclick = () => {
+  $('#paste').value = [
+    'Rs.250.00 debited from A/c XX1234 on 12-09-26 to VPA swiggy@icici (UPI Ref 123456789012)',
+    'Sent Rs.1,480.00 From HDFC Bank A/C *1234 To MYNTRA On 13/09/26 Ref 234567890123',
+    'Rs 120 paid to uber@axisbank on 14-Sep-26. UPI Ref 345678901234',
+    'Sent Rs.1,850.00 from A/c XX1234 to VPA irctc@sbi on 15-09-26',
+    'Rs.60.00 debited A/c XX1234 to VPA 9876543210@ybl on 16-09-26',
+    'Rs.899.00 debited from A/c XX1234 to VPA netflix@icici on 17-09-26',
+    'Rs.2,340.00 debited from A/c XX1234 to VPA bigbasket@hdfcbank on 18-09-26',
+    'Rs.5,000.00 credited to A/c XX1234 on 18-09-26 by VPA rahul@oksbi'
+  ].join('\n\n');
+};
+$('#pdfBtn').onclick = () => $('#pdfFile').click();
+$('#pdfFile').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  const note = $('#parseNote'); note.textContent = 'Reading PDF…';
+  try {
+    const text = await pdfToText(f);
+    if (!text.trim()) { note.textContent = 'No text found in this PDF. It may be a scanned image.'; return; }
+    $('#paste').value = text; $('#sortBtn').click();
+  } catch (err) {
+    note.textContent = err && err.message === 'load'
+      ? 'Could not load the PDF reader. Check your internet connection and try again.'
+      : 'Could not read this PDF. If it is password-protected, open it, copy the text and paste it above.';
+  }
+};
+$('#month').onchange = e => { filterMonth = e.target.value; render(); };
+$('#cats').onclick = e => {
+  const b = e.target.closest('.cat'); if (!b) return;
+  filterCat = filterCat === b.dataset.cat ? null : b.dataset.cat; render();
+};
+$('#clearFilter').onclick = () => { filterCat = null; render(); };
+$('#list').addEventListener('change', e => {
+  const s = e.target.closest('select[data-id]'); if (!s) return;
+  const t = txns.find(x => x.id === s.dataset.id); if (!t) return;
+  const k = keyOf(t.name);
+  rules[k] = s.value;
+  let n = 0;
+  txns.forEach(x => { if (keyOf(x.name) === k) { x.cat = s.value; n++; } });
+  save(); render();
+  toast('Remembered: ' + t.name + ' → ' + s.value + (n > 1 ? ' (' + n + ' payments updated)' : ''));
+});
+$('#list').addEventListener('click', e => {
+  const b = e.target.closest('[data-del]'); if (!b) return;
+  txns = txns.filter(x => x.id !== b.dataset.del); save(); render(); toast('Payment deleted');
+});
+$('#mAdd').onclick = () => {
+  const amt = parseFloat($('#mAmt').value), name = $('#mName').value.trim();
+  if (!(amt > 0) || !name) { toast('Enter an amount and who you paid'); return; }
+  const cat = $('#mCat').value;
+  const today = new Date(); const iso = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
+  txns.push({id: 'm' + Date.now().toString(36) + Math.random().toString(36).slice(2,5), name, amt, date: iso, cat});
+  rules[keyOf(name)] = cat;
+  $('#mAmt').value = ''; $('#mName').value = '';
+  save(); render(); toast('Added ' + inr(amt) + ' to ' + cat);
+};
+$('#resetBtn').onclick = () => {
+  if (!confirm('Delete all payments and remembered categories?')) return;
+  txns = []; rules = {}; filterCat = null; filterMonth = 'all'; save(); render(); toast('All data cleared');
+};
+
+$('#mCat').innerHTML = Object.keys(CATS).map(k => `<option>${k}</option>`).join('');
+load(); render();
+
+/* ---------- install as app (PWA) ---------- */
+(function(){
+  const box = $('#install'), btn = $('#installBtn'), msg = $('#installMsg');
+  const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+  let dismissed = false;
+  try { dismissed = localStorage.getItem('upi_install_dismissed') === '1'; } catch (e) {}
+  if (standalone || dismissed) return;
+  let deferred = null;
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault(); deferred = e;
+    msg.textContent = 'Install this on your phone to open it like an app.';
+    btn.textContent = 'Install'; box.hidden = false;
+  });
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if (ios) {
+    msg.textContent = 'To install: tap the Share button in Safari, then "Add to Home Screen".';
+    btn.hidden = true; box.hidden = false;
+  }
+  btn.onclick = async () => {
+    if (!deferred) return;
+    deferred.prompt();
+    await deferred.userChoice.catch(() => {});
+    deferred = null; box.hidden = true;
+  };
+  $('#installX').onclick = () => {
+    box.hidden = true;
+    try { localStorage.setItem('upi_install_dismissed', '1'); } catch (e) {}
+  };
+  window.addEventListener('appinstalled', () => { box.hidden = true; toast('Installed. Find it on your home screen.'); });
+})();
+
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
+</script>
+</body>
+</html>
