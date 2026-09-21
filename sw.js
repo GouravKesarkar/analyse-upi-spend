@@ -1,5 +1,5 @@
 // Bump CACHE when you deploy a new version so phones pick up the update.
-const CACHE = 'spend-sorter-v8';
+const CACHE = 'spend-sorter-v9';
 const SHELL = ['./', './manifest.json', './icons/icon-192.png', './icons/icon-512.png', './icons/maskable-512.png', './icons/apple-touch-icon.png'];
 
 self.addEventListener('install', e => {
