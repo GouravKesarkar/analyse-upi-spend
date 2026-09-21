@@ -404,10 +404,14 @@ load(); render();
 /* ---------- install as app (PWA) ---------- */
 (function(){
   const box = $('#install'), btn = $('#installBtn'), msg = $('#installMsg');
-  const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+  const mq = m => window.matchMedia('(display-mode: ' + m + ')').matches;
+  const standalone = mq('standalone') || mq('minimal-ui') || mq('fullscreen') || window.navigator.standalone === true
+    || new URLSearchParams(location.search).get('source') === 'pwa';
+  const flag = () => { try { localStorage.setItem('upi_install_dismissed', '1'); } catch (e) {} };
   let dismissed = false;
   try { dismissed = localStorage.getItem('upi_install_dismissed') === '1'; } catch (e) {}
-  if (standalone || dismissed) return;
+  if (standalone) { flag(); return; }   // running as the installed app: never show the banner
+  if (dismissed) return;
   let deferred = null;
   window.addEventListener('beforeinstallprompt', e => {
     e.preventDefault(); deferred = e;
@@ -425,11 +429,8 @@ load(); render();
     await deferred.userChoice.catch(() => {});
     deferred = null; box.hidden = true;
   };
-  $('#installX').onclick = () => {
-    box.hidden = true;
-    try { localStorage.setItem('upi_install_dismissed', '1'); } catch (e) {}
-  };
-  window.addEventListener('appinstalled', () => { box.hidden = true; toast('Installed. Find it on your home screen.'); });
+  $('#installX').onclick = () => { box.hidden = true; flag(); };
+  window.addEventListener('appinstalled', () => { box.hidden = true; flag(); toast('Installed. Find it on your home screen.'); });
 })();
 
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
