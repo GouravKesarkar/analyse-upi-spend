@@ -49,11 +49,14 @@ textarea:focus-visible,input:focus-visible,select:focus-visible,button:focus-vis
 button{font:inherit;cursor:pointer;border-radius:10px;padding:10px 14px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
 button.primary{background:var(--btn);color:var(--btn-ink);border-color:var(--btn);font-weight:600}
 button.link{border:0;background:none;color:var(--muted);padding:10px 4px;text-decoration:underline}
+.drop{display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;padding:28px 16px;border:2px dashed var(--line);border-radius:12px;background:var(--soft);cursor:pointer}
+.drop strong{font-family:var(--display);font-size:18px}
+.drop span{color:var(--muted);font-size:13px}
+.drop:hover,.drop.over{border-color:var(--ink)}
 .hint{color:var(--muted);font-size:13px;margin:8px 0 0}
 .total{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin-bottom:12px}
 .total .num{font-family:var(--display);font-weight:800;font-size:38px;line-height:1;letter-spacing:-.02em}
 .total .lbl{color:var(--muted);font-size:13px;margin-bottom:4px}
-#month{width:auto;padding:8px 10px}
 .ribbon{display:flex;height:16px;border-radius:8px;overflow:hidden;background:var(--line);margin-bottom:14px}
 .ribbon span{display:block;height:100%;min-width:3px}
 .cat{display:grid;grid-template-columns:12px 1fr auto;gap:2px 10px;align-items:center;width:100%;text-align:left;padding:10px 8px;border:0;border-radius:10px;background:none}
@@ -71,8 +74,6 @@ button.link{border:0;background:none;color:var(--muted);padding:10px 4px;text-de
 .tx .ctl{grid-column:1/3;display:flex;gap:8px;align-items:center}
 .tx select{padding:6px 8px;font-size:14px;width:auto;flex:1;max-width:200px}
 .tx .del{padding:6px 10px;color:var(--danger);font-size:13px}
-.add{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.add .full{grid-column:1/3}
 .empty{color:var(--muted);text-align:center;padding:24px 8px}
 .filterbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
 .install{display:flex;gap:12px;align-items:center;justify-content:space-between;background:var(--btn);color:var(--btn-ink);border-radius:14px;padding:12px 14px;margin-bottom:16px}
@@ -88,7 +89,7 @@ button.link{border:0;background:none;color:var(--muted);padding:10px 4px;text-de
 <body>
 <main>
   <h1>Where did my money go?</h1>
-  <p class="sub">Paste your UPI bank SMS or statement lines. They get sorted into categories automatically.</p>
+  <p class="sub">Upload your Google Pay PDF statement. Your payments get sorted into categories automatically.</p>
 
   <div class="install" id="install" hidden>
     <p id="installMsg">Install this on your phone to open it like an app.</p>
@@ -96,21 +97,18 @@ button.link{border:0;background:none;color:var(--muted);padding:10px 4px;text-de
   </div>
 
   <section class="card">
-    <h2>Add payments</h2>
-    <textarea id="paste" placeholder="Paste bank SMS messages here. Leave a blank line between messages."></textarea>
-    <div class="row">
-      <button class="primary" id="sortBtn">Sort my payments</button>
-      <button id="pdfBtn">Upload PDF statement</button>
-      <input type="file" id="pdfFile" accept="application/pdf,.pdf" hidden>
-      <button class="link" id="sampleBtn">Try sample messages</button>
+    <h2>Upload your statement</h2>
+    <div class="drop" id="drop" role="button" tabindex="0" aria-label="Upload PDF statement">
+      <strong>Tap to choose your PDF</strong>
+      <span>Google Pay or bank statement</span>
     </div>
-    <p class="hint" id="parseNote">Paste SMS or upload a Google Pay / bank PDF. The PDF is read on your device and never uploaded. Only money you paid out is counted.</p>
+    <input type="file" id="pdfFile" accept="application/pdf,.pdf" hidden>
+    <p class="hint" id="parseNote">Each new PDF replaces the previous one, so months are never mixed. Your category choices are remembered. The PDF is read on your device and never uploaded.</p>
   </section>
 
   <section class="card" id="summary" hidden>
     <div class="total">
       <div><div class="lbl" id="totalLbl">Total spent</div><div class="num" id="totalNum">₹0</div></div>
-      <select id="month" aria-label="Month"></select>
     </div>
     <div class="ribbon" id="ribbon" aria-hidden="true"></div>
     <div id="cats"></div>
@@ -125,15 +123,6 @@ button.link{border:0;background:none;color:var(--muted);padding:10px 4px;text-de
     <div id="list"></div>
   </section>
 
-  <section class="card">
-    <h2>Add one by hand</h2>
-    <div class="add">
-      <input id="mAmt" type="number" inputmode="decimal" min="0" step="0.01" placeholder="Amount (₹)">
-      <input id="mName" type="text" placeholder="Paid to">
-      <select id="mCat" class="full" aria-label="Category"></select>
-      <button class="primary full" id="mAdd">Add payment</button>
-    </div>
-  </section>
 
   <section class="card" id="resetCard" hidden>
     <button class="link" id="resetBtn" style="padding:0">Clear all my data</button>
@@ -163,7 +152,7 @@ const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const inr = n => '₹' + Number(n).toLocaleString('en-IN', {maximumFractionDigits: 2});
 
-let txns = [], rules = {}, filterCat = null, filterMonth = 'all';
+let txns = [], rules = {}, filterCat = null;
 
 function load(){
   try {
@@ -309,7 +298,6 @@ async function pdfToText(file){
 }
 
 /* ---------- rendering ---------- */
-function monthLabel(m){ return new Date(m + '-01T00:00:00').toLocaleDateString('en-IN', {month:'short', year:'numeric'}); }
 function dayLabel(d){ return new Date(d + 'T00:00:00').toLocaleDateString('en-IN', {day:'numeric', month:'short'}); }
 
 function render(){
@@ -317,21 +305,16 @@ function render(){
   $('#summary').hidden = !has; $('#listCard').hidden = !has; $('#resetCard').hidden = !has;
   if (!has) return;
 
-  const months = [...new Set(txns.map(t => t.date ? t.date.slice(0,7) : null).filter(Boolean))].sort().reverse();
-  if (filterMonth !== 'all' && !months.includes(filterMonth)) filterMonth = 'all';
-  const ms = $('#month');
-  ms.innerHTML = '<option value="all">All time</option>' + months.map(m => `<option value="${m}">${monthLabel(m)}</option>`).join('');
-  ms.value = filterMonth;
-  ms.hidden = months.length === 0;
-
-  const base = txns.filter(t => filterMonth === 'all' || (t.date && t.date.startsWith(filterMonth)));
+  const base = txns;
   const total = base.reduce((s,t) => s + t.amt, 0);
   const by = {};
   base.forEach(t => by[t.cat] = (by[t.cat] || 0) + t.amt);
   const sorted = Object.keys(by).sort((a,b) => by[b] - by[a]);
 
   $('#totalNum').textContent = inr(total);
-  $('#totalLbl').textContent = filterMonth === 'all' ? 'Total spent' : 'Spent in ' + monthLabel(filterMonth);
+  const ds = txns.map(t => t.date).filter(Boolean).sort();
+  const fmt = d => new Date(d + 'T00:00:00').toLocaleDateString('en-IN', {day:'numeric', month:'short', year:'numeric'});
+  $('#totalLbl').textContent = ds.length ? 'Spent, ' + fmt(ds[0]) + ' to ' + fmt(ds[ds.length - 1]) : 'Total spent';
   $('#ribbon').innerHTML = sorted.map(c => `<span style="width:${(by[c]/total*100).toFixed(2)}%;background:${CATS[c].color}"></span>`).join('');
   $('#cats').innerHTML = sorted.length ? sorted.map(c => {
     const p = total ? (by[c]/total*100) : 0;
@@ -339,7 +322,7 @@ function render(){
       <span class="dot" style="background:${CATS[c].color}"></span><span>${esc(c)}</span><span class="amt">${inr(by[c])}</span>
       <span class="bar"><i style="width:${p.toFixed(1)}%;background:${CATS[c].color}"></i></span>
       <span class="pct">${p.toFixed(0)}% of spending</span></button>`;
-  }).join('') : '<div class="empty">No payments in this month.</div>';
+  }).join('') : '<div class="empty">No payments found.</div>';
 
   let list = base.slice();
   if (filterCat) list = list.filter(t => t.cat === filterCat);
@@ -357,46 +340,41 @@ function render(){
 }
 
 /* ---------- events ---------- */
-$('#sortBtn').onclick = () => {
-  const text = $('#paste').value.trim();
-  if (!text) { toast('Paste some messages first'); return; }
-  const r = parseText(text);
-  save(); render();
-  const bits = [];
-  if (r.added) bits.push(r.added + ' payment' + (r.added > 1 ? 's' : '') + ' added');
-  if (r.dup) bits.push(r.dup + ' already added');
-  if (r.skipped) bits.push(r.skipped + ' skipped (no amount or money received)');
-  if (r.unknown) bits.push(r.unknown + ' with no merchant found');
-  $('#parseNote').textContent = bits.length ? bits.join('. ') + '.' : 'Nothing could be read. Check that each message includes an amount like Rs.250.';
-  if (r.added) { $('#paste').value = ''; toast(r.added + ' added and sorted'); }
-};
-$('#sampleBtn').onclick = () => {
-  $('#paste').value = [
-    'Rs.250.00 debited from A/c XX1234 on 12-09-26 to VPA swiggy@icici (UPI Ref 123456789012)',
-    'Sent Rs.1,480.00 From HDFC Bank A/C *1234 To MYNTRA On 13/09/26 Ref 234567890123',
-    'Rs 120 paid to uber@axisbank on 14-Sep-26. UPI Ref 345678901234',
-    'Sent Rs.1,850.00 from A/c XX1234 to VPA irctc@sbi on 15-09-26',
-    'Rs.60.00 debited A/c XX1234 to VPA 9876543210@ybl on 16-09-26',
-    'Rs.899.00 debited from A/c XX1234 to VPA netflix@icici on 17-09-26',
-    'Rs.2,340.00 debited from A/c XX1234 to VPA bigbasket@hdfcbank on 18-09-26',
-    'Rs.5,000.00 credited to A/c XX1234 on 18-09-26 by VPA rahul@oksbi'
-  ].join('\n\n');
-};
-$('#pdfBtn').onclick = () => $('#pdfFile').click();
-$('#pdfFile').onchange = async e => {
-  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
-  const note = $('#parseNote'); note.textContent = 'Reading PDF…';
+async function importPdf(f){
+  const note = $('#parseNote');
+  if (!f) return;
+  if (!/pdf$/i.test(f.type) && !/\.pdf$/i.test(f.name)) { note.textContent = 'Please choose a PDF file.'; return; }
+  note.textContent = 'Reading PDF…';
+  let text;
   try {
-    const text = await pdfToText(f);
-    if (!text.trim()) { note.textContent = 'No text found in this PDF. It may be a scanned image.'; return; }
-    $('#paste').value = text; $('#sortBtn').click();
+    text = await pdfToText(f);
   } catch (err) {
     note.textContent = err && err.message === 'load'
       ? 'Could not load the PDF reader. Check your internet connection and try again.'
-      : 'Could not read this PDF. If it is password-protected, open it, copy the text and paste it above.';
+      : 'Could not read this PDF. It may be damaged or the password was wrong.';
+    return;
   }
-};
-$('#month').onchange = e => { filterMonth = e.target.value; render(); };
+  if (!text.trim()) { note.textContent = 'No text found in this PDF. It may be a scanned image.'; return; }
+  const previous = txns;
+  txns = []; filterCat = null;
+  const r = parseText(text);
+  if (!r.added) txns = previous;   // nothing readable: keep what was there
+  save(); render();
+  const bits = [];
+  if (r.added) bits.push(r.added + ' payment' + (r.added > 1 ? 's' : '') + ' loaded from this statement');
+  if (r.dup) bits.push(r.dup + ' repeated');
+  if (r.skipped) bits.push(r.skipped + ' skipped (money received or no amount)');
+  if (r.unknown) bits.push(r.unknown + ' with no merchant found');
+  note.textContent = bits.length ? bits.join('. ') + '.' : 'No payments found in this PDF. The layout may not be supported yet.';
+  if (r.added) toast('Statement loaded: ' + r.added + ' payments sorted');
+}
+const drop = $('#drop');
+drop.onclick = () => $('#pdfFile').click();
+drop.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('#pdfFile').click(); } };
+drop.ondragover = e => { e.preventDefault(); drop.classList.add('over'); };
+drop.ondragleave = () => drop.classList.remove('over');
+drop.ondrop = e => { e.preventDefault(); drop.classList.remove('over'); importPdf(e.dataTransfer.files[0]); };
+$('#pdfFile').onchange = e => { const f = e.target.files[0]; e.target.value = ''; importPdf(f); };
 $('#cats').onclick = e => {
   const b = e.target.closest('.cat'); if (!b) return;
   filterCat = filterCat === b.dataset.cat ? null : b.dataset.cat; render();
@@ -416,22 +394,11 @@ $('#list').addEventListener('click', e => {
   const b = e.target.closest('[data-del]'); if (!b) return;
   txns = txns.filter(x => x.id !== b.dataset.del); save(); render(); toast('Payment deleted');
 });
-$('#mAdd').onclick = () => {
-  const amt = parseFloat($('#mAmt').value), name = $('#mName').value.trim();
-  if (!(amt > 0) || !name) { toast('Enter an amount and who you paid'); return; }
-  const cat = $('#mCat').value;
-  const today = new Date(); const iso = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
-  txns.push({id: 'm' + Date.now().toString(36) + Math.random().toString(36).slice(2,5), name, amt, date: iso, cat});
-  rules[keyOf(name)] = cat;
-  $('#mAmt').value = ''; $('#mName').value = '';
-  save(); render(); toast('Added ' + inr(amt) + ' to ' + cat);
-};
 $('#resetBtn').onclick = () => {
-  if (!confirm('Delete all payments and remembered categories?')) return;
-  txns = []; rules = {}; filterCat = null; filterMonth = 'all'; save(); render(); toast('All data cleared');
+  if (!confirm('Delete the loaded payments and all remembered categories?')) return;
+  txns = []; rules = {}; filterCat = null; save(); render(); toast('All data cleared');
 };
 
-$('#mCat').innerHTML = Object.keys(CATS).map(k => `<option>${k}</option>`).join('');
 load(); render();
 
 /* ---------- install as app (PWA) ---------- */
