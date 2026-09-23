@@ -134,8 +134,10 @@ button.link{border:0;background:none;color:var(--muted);padding:10px 4px;text-de
 
 <script>
 const CATS = {
+  'Bank Transfer': {color:'#5c6f7a', kw:['kesarkar','chandgadkar']},
+  'Household':     {color:'#a1662f', kw:['urban','urbanclap','handyman','plumber','electrician','carpenter','pest control','cleaning service']},
   'Food':          {color:'#e4572e', kw:['swiggy','zomato','eatery','restaurant','resto','cafe','coffee','starbucks','chai','pizza','dominos','domino','mcdonald','kfc','burger','biryani','bakery','kitchen','dhaba','tiffin','fine dine','resto ?bar','sweets','juice','barbeque','haldiram','subway','food','ice ?cream','faasos','eatfit','behrouz','dunzo cafe','tea']},
-  'Groceries':     {color:'#7fae2f', kw:['bigbasket','blinkit','zepto','instamart','dmart','d mart','grocery','grocer','kirana','supermarket','reliance fresh','more retail','milk','dairy','vegetable','fruits','jiomart','licious','freshtohome','nature.?s basket','provision','general store']},
+  'Groceries':     {color:'#7fae2f', kw:['bigbasket','blinkit','zepto','instamart','dmart','d mart','grocery','grocer','kirana','supermarket','mart','flour','reliance fresh','more retail','milk','dairy','vegetable','fruits','jiomart','licious','freshtohome','nature.?s basket','provision','general store']},
   'Travel':        {color:'#2b83b5', kw:['uber','olacabs','ola cabs','ola money','rapido','irctc','redbus','abhibus','makemytrip','goibibo','yatra','cleartrip','indigo','air india','akasa','spicejet','vistara','metro','dmrc','bmtc','ksrtc','msrtc','fastag','petrol','fuel','hpcl','bpcl','iocl','indian oil','bharat petroleum','shell','railway','ixigo','easemytrip','airport','taxi','cab','parking','toll','bus','oyo','airbnb','hotel','lodge']},
   'Clothes':       {color:'#9a58c2', kw:['myntra','ajio','zara','h&m','h ?and ?m','trends','lifestyle','pantaloons','westside','max fashion','fashion','garment','textile','clothing','apparel','boutique','tailor','shoppers stop','uniqlo','levis','allen solly','peter england','fabindia','biba','w for woman','tanishq','jewel','footwear','shoes','bata','nike','adidas','puma','decathlon','readymade','saree','sarees','vastra','cloth']},
   'Shopping':      {color:'#d99a00', kw:['amazon','flipkart','meesho','nykaa','croma','reliance digital','ikea','pepperfry','urban ?ladder','snapdeal','tatacliq','shopsy','mall','store','mart','bazaar','electronics','stationery','gift']},
@@ -145,7 +147,7 @@ const CATS = {
   'People':        {color:'#7d8794', kw:[]},
   'Other':         {color:'#a39b8b', kw:[]}
 };
-const ORDER = ['Groceries','Clothes','Travel','Health','Entertainment','Bills','Food','Shopping'];
+const ORDER = ['Bank Transfer','Household','Groceries','Clothes','Travel','Health','Entertainment','Bills','Food','Shopping'];
 const RX = {};
 ORDER.forEach(c => { RX[c] = new RegExp('(?:^|[^a-z])(?:' + CATS[c].kw.join('|') + ')', 'i'); });
 
