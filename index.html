@@ -76,6 +76,7 @@ button.link{border:0;background:none;color:var(--muted);padding:10px 4px;text-de
 .tx select{padding:6px 8px;font-size:14px;width:auto;flex:1;max-width:200px}
 .tx .del{padding:6px 10px;color:var(--danger);font-size:13px}
 .empty{color:var(--muted);text-align:center;padding:24px 8px}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:8px 8px 4px;line-height:1.6}
 #pills{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 10px;margin-bottom:4px;scrollbar-width:none}
 #pills::-webkit-scrollbar{display:none}
 .pill{flex-shrink:0;display:flex;align-items:center;gap:6px;padding:7px 13px;border-radius:999px;border:1px solid var(--line);background:var(--soft);color:var(--ink);font-size:13px;white-space:nowrap}
@@ -132,13 +133,16 @@ button.link{border:0;background:none;color:var(--muted);padding:10px 4px;text-de
     <button class="link" id="resetBtn" style="padding:0">Clear all my data</button>
     <p class="hint">Your payments stay in this browser only. Nothing is uploaded.</p>
   </section>
+
+  <footer>&copy; 2026 UPI Spend Analyzer. All rights reserved.<br>Made for personal use by Gourav Kesarkar&mdash; not affiliated with Google Pay or NPCI.</footer>
 </main>
 <div id="toast" role="status" aria-live="polite"></div>
 
 <script>
 const CATS = {
-  'Bank Transfer': {color:'#5c6f7a', kw:['kesarkar','chandgadkar']},
+  'Bank Transfer': {color:'#5c6f7a', kw:['kesarkar','chandgadkar','self transfer']},
   'Household':     {color:'#a1662f', kw:['urban','urbanclap','handyman','plumber','electrician','carpenter','pest control','cleaning service']},
+  'Investment':    {color:'#0f766e', kw:['zerodha']},
   'Food':          {color:'#e4572e', kw:['swiggy','zomato','eatery','restaurant','resto','cafe','coffee','starbucks','chai','pizza','dominos','domino','mcdonald','kfc','burger','biryani','bakery','kitchen','dhaba','tiffin','fine dine','resto ?bar','sweets','juice','barbeque','haldiram','subway','food','ice ?cream','faasos','eatfit','behrouz','dunzo cafe','tea']},
   'Groceries':     {color:'#7fae2f', kw:['bigbasket','blinkit','zepto','instamart','dmart','d mart','grocery','grocer','kirana','supermarket','mart','flour','reliance fresh','more retail','milk','dairy','vegetable','fruits','jiomart','licious','freshtohome','nature.?s basket','provision','general store']},
   'Travel':        {color:'#2b83b5', kw:['uber','olacabs','ola cabs','ola money','rapido','irctc','redbus','abhibus','makemytrip','goibibo','yatra','cleartrip','indigo','air india','akasa','spicejet','vistara','metro','dmrc','bmtc','ksrtc','msrtc','fastag','petrol','fuel','hpcl','bpcl','iocl','indian oil','bharat petroleum','shell','railway','ixigo','easemytrip','airport','taxi','cab','parking','toll','bus','oyo','airbnb','hotel','lodge']},
@@ -150,7 +154,7 @@ const CATS = {
   'People':        {color:'#7d8794', kw:[]},
   'Other':         {color:'#a39b8b', kw:[]}
 };
-const ORDER = ['Bank Transfer','Household','Groceries','Clothes','Travel','Health','Entertainment','Bills','Food','Shopping'];
+const ORDER = ['Bank Transfer','Household','Investment','Groceries','Clothes','Travel','Health','Entertainment','Bills','Food','Shopping'];
 const RX = {};
 ORDER.forEach(c => { RX[c] = new RegExp('(?:^|[^a-z])(?:' + CATS[c].kw.join('|') + ')', 'i'); });
 
